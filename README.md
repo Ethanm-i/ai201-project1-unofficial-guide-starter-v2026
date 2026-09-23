@@ -21,11 +21,7 @@
 
 ## What This Does
 
-<!-- Three or four sentences. Which corpus you picked, and the kinds of
-     questions your system answers. Write it for someone who has never seen
-     this repo.
-
-     Milestone 5. -->
+This assistant answers questions using the `campus_life` documents about courses, dining, housing, and campus rules. It searches for relevant passages and uses them to write a short answer with source filenames. A relevance cutoff blocks clearly off-topic questions before they reach the model. Questions that require counting every location can still fail because retrieval may return only some of the needed documents.
 
 ## Chunking Strategy
 
@@ -132,6 +128,13 @@ Morrow House — what it's actually like
 
 Just finished a year in this building. Built 1954, partially renovated 2008. Rooms are singles and doubles, hall bathrooms.
 
+The good: cheapest housing tier by about $900 a year, and the singles are real singles.
+
+The bad: known damp problem on the ground floor; two rooms were taken offline in 2024.
+
+For each one, ask: could someone answer a question using only this,
+without reading what came before or after?
+
 ```
 
 ## Sample Answer
@@ -180,18 +183,9 @@ A lower cutoff could reject useful answers; a higher cutoff could admit more unr
 
 ## How I Used AI
 
-<!-- Two specific moments. For each: what you asked for, what came back, and
-     what you changed about it.
+**1. Chunking:** I used AI implement my chunking rules and provide me with a preview of the code before using it. I got back the code reviewed it and made sure that it was implementing the set rules.
 
-     "I asked Claude to write the chunking function from my notes. It ignored
-     the overlap, so I added that myself" is the level of detail we're after.
-     "I used AI to help me code" is not.
-
-     Milestone 5. -->
-
-**1.**
-
-**2.**
+**2. Retrieval:** I used AI to test retrieval and help choose a cutoff. and to review my quesitions to make them more forcused and it replaced the questions with focused ones.I left one of the question to show the gaps in and the limitation of the retrieval
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
