@@ -55,7 +55,9 @@ in at least 4 of 5 tries.
 
 ---
 
-## 4. Something about your chunks
+## 4. Making sure that the sentences in the chunks belong
+
+One of the chucks contains a sentence that doesnt makes sense or is not expected to be there
 
 <!-- YOU WRITE THIS ONE.
 
@@ -77,7 +79,10 @@ in at least 4 of 5 tries.
 
 ---
 
-## 5. Your choice
+## 5. Getting the right number or count of what the quesiton might ask.
+
+for example when i asked how many dining halls are on campus i got back are response 
+saying " I dont have enough information to answer this question" and the lisdt od the dinning halls listed in the different location and didnt get back a number.
 
 <!-- YOU WRITE THIS ONE TOO.
 
@@ -86,6 +91,8 @@ in at least 4 of 5 tries.
      handles badly, about source attribution being correct rather than merely
      present — anything, as long as it names a number or an observable
      outcome. -->
+
+     
 
 
 

@@ -29,18 +29,17 @@
 
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Corpus:** `campus_life` (the current project configuration).
 
-<!-- What about YOUR documents made you pick these numbers? Short posts and
-     long sectioned guides don't want the same chunking, and "800 seemed
-     reasonable" earns nothing. Point at something you noticed when you read
-     the documents in Milestone 1.
+**Chunk size:** A target of 400 characters per chunk, including the document title. Keep posts that fit within this target whole. For longer posts, group complete paragraphs up to the target and repeat the title in each chunk. Treat 400 as a soft limit: keep a paragraph intact when splitting it would lose a complete thought.
 
-     If you changed your mind partway through, say so and say why. That's worth
-     more than pretending you got it right first time.
+**Overlap:** Zero characters of body-text overlap. Repeat the document title in each chunk so the course, building, or service being discussed remains clear. If a paragraph depends on the preceding paragraph to make sense, keep them together even if this exceeds the target.
 
-     Milestone 3. -->
+**Baseline observation:** Inspection of the cleaned corpus files found 88 documents, with lengths ranging from 178 to 549 characters and an average of about 317. With the starter's 800-character windows and 120-character overlap, each document fits in one chunk, producing 88 chunks. These numbers were checked from the files; indexing has not been rerun for this proposal.
+
+**Reason:** Short course posts such as `course_hist_118_exams.txt` contain closely related assessment details and should stay together. Longer housing posts such as `housing_old_brewhouse.txt` mix room descriptions, advantages, heating problems, laundry, and noise across paragraphs. A 400-character target gives those longer posts an opportunity to split at existing paragraph boundaries without cutting sentences. Repeating the title prevents a paragraph about heating or laundry from losing the name of the building. Body overlap starts at zero because these posts are already short and unnecessary repetition could crowd retrieval results with duplicate text.
+
+**Status:** This is the proposed strategy before implementation. Next, implement it in `chunker.py::split_documents`, inspect five actual chunks, and revise the target or grouping rule if the chunks need more context. The starter chunker is still in use.
 
 ## Sample Chunks
 
@@ -53,29 +52,86 @@
 
      Milestone 3. -->
 
+======================================================================
+Chunk 1  |  source: thread_bike_commute.txt#0  |  produced by: chunker.py::fallback_split
+======================================================================
+THREAD: Is a bike worth it for a 20 minute walk commute?
+
+--- reply 1 (14 votes) ---
+Yeah. Cuts an 18 minute walk to about 6. The thing nobody mentions is storage — covered bike parking exists at three buildings and is full by 9am at all three.
+
+--- reply 2 (9 votes) ---
+Counterpoint, I sold mine. Between November and March the paths are either icy or salted and salt destroys a drivetrain in one season.
+
+--- reply 3 (22 votes) ---
+Both true. I keep a cheap bike for September to November and walk the rest of the year. Total cost was about $120 for the bike and I don't care what happens to it.
+
+--- reply 4 (5 votes) ---
+If you do get one, the campus does free registration and it's the only reason I got mine back after it was taken.
+
+For each one, ask: could someone answer a question using only this,
+without reading what came before or after?
+
 **Chunk 1** — source: `` — produced by: ``
 
 ```
+======================================================================
+Chunk 1  |  source: admin_add_drop_deadline.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
 ```
 
 **Chunk 2** — source: `` — produced by: ``
 
 ```
+======================================================================
+Chunk 2  |  source: course_cs_210.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+CS 210 Data Structures
+
+I'm a junior and I've done this twice now. Format is lecture with weekly labs; slides go up after class, not before. Assessment: two midterms and a final, all drawn from lecture material rather than the textbook. Midterms are curved, the final is not.
+
+Expect 8 to 10 hours a week outside class.
 ```
 
 **Chunk 3** — source: `` — produced by: ``
 
 ```
+======================================================================
+Chunk 3  |  source: course_math_220_workload.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+Workload for MATH 220 Linear Algebra
+
+People keep asking so: 6 to 8 hours a week, almost all of it on problem sets. That's real time, not optimistic time.
+
+It's front-loaded — the first month is heavier than the rest, partly because you're learning the format.
 ```
 
 **Chunk 4** — source: `` — produced by: ``
 
 ```
+======================================================================
+Chunk 4  |  source: dining_the_ridgeway_cafe_followup.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+Re: The Ridgeway Café
+
+Adding to what people have said about The Ridgeway Café. The wait figure of 10 to 15 minutes at 12:30 matches what I've seen. If you're trying to eat between classes, go before 11:45 and it's a different building entirely.
+
+Also worth saying: seating is tight; about 40 seats for a building of 900. Nobody tells you this at orientation.
 ```
 
 **Chunk 5** — source: `` — produced by: ``
 
 ```
+======================================================================
+Chunk 5  |  source: housing_morrow_house.txt#0  |  produced by: chunker.py::split_documents
+======================================================================
+Morrow House — what it's actually like
+
+Just finished a year in this building. Built 1954, partially renovated 2008. Rooms are singles and doubles, hall bathrooms.
+
 ```
 
 ## Sample Answer

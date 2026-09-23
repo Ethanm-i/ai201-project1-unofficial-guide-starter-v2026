@@ -80,24 +80,86 @@ def fallback_split(
     return chunks
 
 
+_DEPENDENT_OPENERS = (
+    "it ", "it's", "its ", "this ", "that ", "these ", "those ",
+    "also ", "however ", "so ", "but ",
+)
+
+
+def _split_into_paragraphs(text: str) -> list[str]:
+    """Paragraphs are blocks separated by a blank line."""
+    return [p.strip() for p in text.split("\n\n") if p.strip()]
+
+
+def _depends_on_previous(paragraph: str) -> bool:
+    """Rough check: does this paragraph read like a continuation rather than
+    a standalone thought? A pronoun or connector opener with nothing inside
+    this chunk to point back to loses the reader.
+    """
+    return paragraph.lower().startswith(_DEPENDENT_OPENERS)
+
+
+def _group_paragraphs(title: str, paragraphs: list[str], target: int) -> list[str]:
+    """Group paragraphs into ~target-character chunks, title repeated in
+    each. Never splits inside a paragraph. A paragraph that depends on the
+    one before it stays with it even past target.
+    """
+    chunks: list[str] = []
+    current: list[str] = []
+    current_len = len(title)
+
+    for paragraph in paragraphs:
+        added_len = len(paragraph) + 2  # + the blank line joining it
+        must_merge = current and _depends_on_previous(paragraph)
+
+        if current and current_len + added_len > target and not must_merge:
+            chunks.append(title + "\n\n" + "\n\n".join(current))
+            current = [paragraph]
+            current_len = len(title) + added_len
+        else:
+            current.append(paragraph)
+            current_len += added_len
+
+    if current:
+        chunks.append(title + "\n\n" + "\n\n".join(current))
+
+    return chunks
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
-
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
-
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Paragraph-aware chunker for the campus_life corpus. See README.md's
+    "Chunking Strategy" for the reasoning: posts that fit within
+    config.CHUNK_SIZE stay whole; longer posts split on paragraph
+    boundaries, with the title repeated in every piece so the building,
+    course, or service being discussed stays identifiable.
     """
-    return fallback_split(documents)
+    target = config.CHUNK_SIZE
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        paragraphs = _split_into_paragraphs(doc.text)
+        if not paragraphs:
+            continue
+
+        title, body = paragraphs[0], paragraphs[1:]
+
+        if len(doc.text) <= target or not body:
+            pieces = [doc.text]
+        else:
+            pieces = _group_paragraphs(title, body, target)
+
+        for index, piece in enumerate(pieces):
+            chunks.append(
+                Chunk(
+                    text=piece,
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
