@@ -22,24 +22,26 @@ names a target of "4 of 5", and four of three is not a thing.
 """
 
 QUESTIONS = [
-    # {"question": "...", "expects": "..."},
-    {"question": "How many dinning halls are on campus?", "expects": "7 dinning locations: "
-    " Halden Hall, Kestrel Commons, North Kitchen, Pellew Dining Hall, The Atrium, "
-    "The Ridgeway Café, and Verrill Street Grill"},
-    {"question": "What are the students' reactions to the dining food?", "expects": ""
-        """Halden Hall — soup rotation + on-site baked bread
-        Kestrel Commons — stir-fry station, made to order
-        North Kitchen — rotating regional menu (ambitious)
-        Pellew Dining Hall — allergen-free station, staffed knowledgeably
-        The Atrium — genuinely good sandwiches
-        The Ridgeway Café — only place on campus with real espresso
-        Verrill Street Grill — the burger, only late-night hot food on campus"""},
-    {"question": "How many houses are on campus?", "expects": "7 housing buildings: Aldridge Hall, "
-    "Calder Annexe, Fenwick Court,"
-    " Innisfree Hall, Morrow House, Old Brewhouse, and Tamsin Court"},
-    {"question": "What time does the dinning hall open?", "expects": "different itimes when"
-    "the dinning halls is open for the different locations."},
-    {"question": "", "expects": ""},
+    {
+        "question": "When can I drop a course, and when does a W appear on my transcript?",
+        "expects": "week six",
+    },
+    {
+        "question": "What material do CS 210 exams cover, and which exams are curved?",
+        "expects": "lecture material",
+    },
+    {
+        "question": "How much weekly work does MATH 220 require?",
+        "expects": "6 to 8 hours",
+    },
+    {
+        "question": "When should I visit Ridgeway Cafe to avoid the lunchtime wait?",
+        "expects": "11:45",
+    },
+    {
+        "question": "How many houses are on campus?",
+        "expects": "7",
+    },
 ]
 
 # Questions from a different world entirely. Your gate should refuse all five.

@@ -140,26 +140,43 @@ Just finished a year in this building. Built 1954, partially renovated 2008. Roo
      visible. Milestone 4. -->
 
 **Question:**
+What material do CS 210 exams cover?
 
 **Answer:**
 
 ```
+CS 210 exams are drawn from lecture material rather than the textbook, and they reuse lab problems.
+
+
+Source: `course_cs_210_exams.txt` (and `course_cs_210.txt`)
+
+Sources retrieved: course_cs_210.txt, course_cs_210_exams.txt, course_cs_340_exams.txt, course_engl_205_exams.txt
 ```
 
-**My relevance cutoff:**
+**My relevance cutoff:** `0.6` (draft for review).
 
-<!-- The number you set in config.py, and how you got there.
+**Retrieval settings:** `TOP_K = 5`, with the current `campus_life` index of 100 chunks from 88 documents. Lower distances indicate closer matches. The gate accepts a question only when its best distance is strictly below `0.6`.
 
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
-
-     Milestone 4. -->
+The five in-scope questions below had best distances from 0.1994 to 0.4043. The five questions in `OUT_OF_SCOPE` ranged from 0.8246 to 0.9231. Keeping the starter cutoff of 0.6 puts it between these groups: all five in-scope questions pass, and all five off-topic questions are rejected in this sample. These are measured retrieval results, not a guarantee for unseen questions or a score for generated-answer accuracy.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| When can I drop a course, and when does a W appear on my transcript? | Yes | 0.1994 |
+| What material do CS 210 exams cover, and which exams are curved? | Yes | 0.3335 |
+| How much weekly work does MATH 220 require? | Yes | 0.3943 |
+| When should I visit Ridgeway Cafe to avoid the lunchtime wait? | Yes | 0.2344 |
+| How many houses are on campus? | Yes | 0.4043 |
+| What is the capital of Mongolia? | No | 0.8246 |
+| How do I change the oil in a diesel engine? | No | 0.9231 |
+| Who won the 1994 World Cup? | No | 0.8859 |
+| What is the recommended dosage of ibuprofen for a headache? | No | 0.8442 |
+| How do I write a for loop in Rust? | No | 0.8907 |
+
+**Retrieval review:** The first result for each of the four focused questions contained information that answered it. The fifth question, "How many houses are on campus?", returned five housing descriptions, but those results do not establish the total of seven housing buildings represented in the corpus. Passing the gate is not the same as retrieving a complete answer. For the first three questions, the top sources were `admin_add_drop_deadline.txt`, `course_cs_210_exams.txt`, and `course_math_220_workload.txt`. Lower-ranked results sometimes concerned other courses or administrative topics. Keep top-k at 5 for now: for MATH 220, the fifth result provides additional relevant course context. The model still needs to distinguish the named course or location from unrelated results.
+
+**Limitations and question revision:** The original file contained four completed questions. Several asked for campus-wide counts or summaries. In the initial check, "How many dinning halls are on campus?" retrieved housing documents with a best distance of 0.4969, which passes the cutoff despite not answering the question. The housing-count question also retrieved only part of the evidence needed for a campus-wide total. The current set keeps four focused questions and restores the original housing-count question as the fifth test. Its expected corpus count is seven buildings: Aldridge Hall, Calder Annexe, Fenwick Court, Innisfree Hall, Morrow House, Old Brewhouse, and Tamsin Court. This question preserves an observed retrieval weakness. The focused questions were tested during this review and their expected phrases were added afterward, so this is not a held-out evaluation. A distance gate measures similarity, not whether the retrieved text fully answers a question.
+
+A lower cutoff could reject useful answers; a higher cutoff could admit more unrelated material. The existing grounding instruction requires source-only answers, refusal when the documents do not cover the question, and source filenames. It remains necessary for near misses that pass the gate. The diesel-engine question was also tested through `app.py ask`: it returned "I don't have enough information about that." with zero model calls.
 
 ## How I Used AI
 
