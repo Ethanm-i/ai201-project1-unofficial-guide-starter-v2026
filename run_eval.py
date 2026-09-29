@@ -20,16 +20,15 @@ That table is the raw material for your run log, not the run log itself. The
 submission template wants one row per *criterion* — aggregating your questions
 up into your criteria is your work, not the script's.
 
-⚠️ What it does NOT do is decide whether an answer was right.
+⚠️ What it does NOT do is decide whether an answer's wording is exactly right.
 
-That judgment is yours, and you'll build it in class in unit 2 as `scorer.py`.
-Until that file exists, the Run columns carry the raw answers and you read them
-yourself. Once it exists — a file called `scorer.py`, with a function
-`judge(question, expects, answer, results) -> bool` — this script finds it
-automatically and the Run columns carry verdicts instead.
-
-Deciding what counts as correct is the actual lesson. It would be easy to hand
-you a scorer; you'd learn nothing from it.
+Criterion 1 (retrieved chunk contains the answer) is scored automatically via
+`scorer.py::retrieval_hit(expects, results) -> bool`, if you've built it —
+until then that column is blank. Criterion 2 (every answer names a source) is
+checked automatically in this file (`_names_a_source`), since it's a
+structural check rather than a judgment call. Criteria 4 and 5 are yours to
+score by hand from the "Real output" section, since criteria.md doesn't define
+a machine-checkable target for them.
 """
 
 import argparse
@@ -40,15 +39,35 @@ from pathlib import Path
 import config
 import questions as qs
 
+# Targets from criteria.md. Keep these in sync by hand if you revise a target
+# there — criteria.md is free-form prose, so there's nothing to parse it from.
+CRITERION_1_TARGET = 4  # of 5: retrieved chunks contain the answer
+CRITERION_2_TARGET = 5  # of 5: every answer names a source
+CRITERION_3_TARGET = 4  # of 5: gate stops out-of-corpus questions
 
-def load_scorer():
-    """Use scorer.py if the student has built it. Otherwise run unscored."""
+
+def load_retrieval_hit():
+    """Use scorer.py's retrieval_hit if the student has built it."""
     try:
         import scorer  # noqa: PLC0415
     except ImportError:
         return None
-    judge = getattr(scorer, "judge", None)
-    return judge if callable(judge) else None
+    fn = getattr(scorer, "retrieval_hit", None)
+    return fn if callable(fn) else None
+
+
+def _names_a_source(answer: str, results) -> bool:
+    """Does the answer literally name at least one retrieved source file?
+
+    Checked against the full filename and its stem without the extension,
+    since an answer might drop the ".txt" or wrap the name in backticks.
+    """
+    lowered = answer.lower()
+    for r in results:
+        stem = r.source.rsplit(".", 1)[0]
+        if r.source.lower() in lowered or stem.lower() in lowered:
+            return True
+    return False
 
 
 def run_once(question: str, top_k, threshold, corpus, variant):
@@ -91,10 +110,10 @@ def main():
         )
         sys.exit(1)
 
-    judge = load_scorer()
-    if judge is None:
-        print("No scorer.py found — running unscored. Verdict column will be blank.")
-        print("You'll build scorer.py in class in unit 2.\n")
+    retrieval_hit = load_retrieval_hit()
+    if retrieval_hit is None:
+        print("No scorer.retrieval_hit found — criterion 1 will be blank.")
+        print("Build scorer.py::retrieval_hit(expects, results) to score it automatically.\n")
 
     if args.runs < 3:
         print(f"⚠️  {args.runs} run(s). The submission asks for three.\n")
@@ -107,35 +126,57 @@ def main():
         expects = item.get("expects", "")
         print(f"\n{question}")
 
-        run_results = []
+        crit1_runs = []
+        crit2_runs = []
         for run in range(1, args.runs + 1):
             answer, results, decision = run_once(
                 question, top_k, threshold, corpus, args.variant
             )
-            passed = judge(question, expects, answer, results) if judge else None
-            run_results.append(passed)
 
-            mark = {True: "pass", False: "fail", None: "—"}[passed]
-            print(f"  run {run}: {mark}  (best distance {decision.best_distance:.3f})")
+            crit1 = retrieval_hit(expects, results) if retrieval_hit else None
+            crit2 = _names_a_source(answer, results)
+            crit1_runs.append(crit1)
+            crit2_runs.append(crit2)
+
+            def _mark(v):
+                return {True: "pass", False: "fail", None: "—"}[v]
+
+            print(
+                f"  run {run}: criterion 1 (retrieval) {_mark(crit1)}, "
+                f"criterion 2 (names source) {_mark(crit2)}  "
+                f"(best distance {decision.best_distance:.3f})"
+            )
 
             transcript.append(
                 {
                     "question": question,
                     "run": run,
                     "answer": answer,
-                    "sources": sorted({r.source for r in results}),
+                    "chunks": [
+                        {"source": r.source, "distance": r.distance, "text": r.text}
+                        for r in results
+                    ],
                     "best_distance": decision.best_distance,
                     "gate_passed": decision.passed,
+                    "crit1": crit1,
+                    "crit2": crit2,
                 }
             )
 
-        rows.append({"question": question, "expects": expects, "runs": run_results})
+        rows.append(
+            {
+                "question": question,
+                "expects": expects,
+                "crit1_runs": crit1_runs,
+                "crit2_runs": crit2_runs,
+            }
+        )
 
     gate_rows = check_out_of_scope(top_k, threshold, corpus, args.variant)
 
     write_report(
         rows, transcript, gate_rows, args, corpus, top_k, threshold,
-        scored=judge is not None,
+        scored=retrieval_hit is not None,
     )
 
 
@@ -176,13 +217,19 @@ def check_out_of_scope(top_k, threshold, corpus, variant):
     return rows
 
 
+def _mark(v) -> str:
+    return {True: "pass", False: "fail", None: " "}[v]
+
+
 def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, scored):
     config.RESULTS_DIR.mkdir(exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y-%m-%d_%H%M")
     label = f"_{args.label}" if args.label else ""
     path = config.RESULTS_DIR / f"run_{stamp}{label}.md"
 
-    n = len(rows[0]["runs"]) if rows else 0
+    n = len(rows[0]["crit2_runs"]) if rows else 0
+    total_q = len(rows)
+    total_oos = len(gate_rows)
     run_headers = " | ".join(f"Run {i}" for i in range(1, n + 1))
     run_divider = "|".join(["---"] * n)
 
@@ -191,44 +238,110 @@ def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, sc
         "",
         f"- Produced by: `run_eval.py::main`",
         f"- Retrieval: `store.py::search`, chunks from `chunker.py::split_documents`",
+        f"- Scoring: `scorer.py::retrieval_hit` (criterion 1), "
+        f"`run_eval.py::_names_a_source` (criterion 2)",
         f"- Corpus: `{corpus}` (index variant `{args.variant}`)",
         f"- top-k: {top_k} · relevance cutoff: {threshold}",
         f"- Runs per question: {n}, caching off",
         f"- When: {dt.datetime.now().strftime('%Y-%m-%d %H:%M')}",
         "",
-        "This table is one row per QUESTION. The run log your README asks for is",
-        "one row per CRITERION, so aggregate these into it — criterion 1 is how many",
-        "of your questions had the answer in the retrieved chunks, and so on.",
+    ]
+
+    # --- Summary: one row per criterion, matching the README's table -------
+    def verdict_for(counts, target):
+        return "MET" if counts and all(c >= target for c in counts) else "MISSED"
+
+    lines += [
+        "## Summary — one row per criterion",
+        "",
+        f"| Criterion | Target | {run_headers} | Verdict |",
+        f"|---|---|{run_divider}|---|",
+    ]
+
+    if scored:
+        crit1_counts = [
+            sum(1 for r in rows if r["crit1_runs"][i]) for i in range(n)
+        ]
+        cells = " | ".join(f"{c}/{total_q}" for c in crit1_counts)
+        v = verdict_for(crit1_counts, CRITERION_1_TARGET)
+        lines.append(
+            f"| 1. Retrieved chunk contains the answer | {CRITERION_1_TARGET} of {total_q} "
+            f"| {cells} | {v} |"
+        )
+    else:
+        blanks = " | ".join([" "] * n)
+        lines.append(
+            f"| 1. Retrieved chunk contains the answer | {CRITERION_1_TARGET} of {total_q} "
+            f"| {blanks} | — (build scorer.retrieval_hit) |"
+        )
+
+    crit2_counts = [sum(1 for r in rows if r["crit2_runs"][i]) for i in range(n)]
+    cells2 = " | ".join(f"{c}/{total_q}" for c in crit2_counts)
+    v2 = verdict_for(crit2_counts, CRITERION_2_TARGET)
+    lines.append(
+        f"| 2. Every answer names a source | {CRITERION_2_TARGET} of {total_q} "
+        f"| {cells2} | {v2} |"
+    )
+
+    if gate_rows:
+        refused = sum(r["refused"] for r in gate_rows)
+        oos_cells = " | ".join([f"{refused}/{total_oos}"] * n)
+        v3 = "MET" if refused >= CRITERION_3_TARGET else "MISSED"
+        lines.append(
+            f"| 3. Gate stops out-of-corpus questions | {CRITERION_3_TARGET} of {total_oos} "
+            f"| {oos_cells} | {v3} |"
+        )
+
+    lines += [
+        "",
+        "> Criteria 4 and 5 are yours — criteria.md doesn't define a countable",
+        "> check for them, so this script can't score them. Judge those by hand",
+        "> from the real output below.",
+        "",
+        "---",
+        "",
+        "## Criterion 1 detail — one row per question",
+        "",
+        "Produced by `scorer.py::retrieval_hit`. `pass` means the match in",
+        "scorer.py found `expects` inside at least one retrieved chunk's text.",
+        "",
+    ]
+
+    if scored:
+        lines += [f"| Question | {run_headers} |", f"|---|{run_divider}|"]
+        for row in rows:
+            cells = " | ".join(_mark(v) for v in row["crit1_runs"])
+            q = row["question"].replace("|", "\\|")
+            lines.append(f"| {q} | {cells} |")
+    else:
+        lines.append("> scorer.py has no `retrieval_hit` function yet, so this is blank.")
+
+    lines += [
+        "",
+        "---",
+        "",
+        "## Criterion 2 detail — one row per question",
+        "",
+        "Produced by `run_eval.py::_names_a_source`. `pass` means the answer",
+        "text literally contains one of the retrieved chunks' filenames.",
         "",
         f"| Question | {run_headers} |",
         f"|---|{run_divider}|",
     ]
-
     for row in rows:
-        cells = []
-        for passed in row["runs"]:
-            cells.append({True: "pass", False: "fail", None: " "}[passed])
-        question = row["question"].replace("|", "\\|")
-        lines.append(f"| {question} | {' | '.join(cells)} |")
-
-    if not scored:
-        lines += [
-            "",
-            "> The Run columns are blank because `scorer.py` doesn't exist yet.",
-            "> Judge each question yourself by reading the output below, or build",
-            "> the scorer first and re-run.",
-        ]
+        cells = " | ".join(_mark(v) for v in row["crit2_runs"])
+        q = row["question"].replace("|", "\\|")
+        lines.append(f"| {q} | {cells} |")
 
     if gate_rows:
-        refused = sum(r["refused"] for r in gate_rows)
         lines += [
             "",
             "---",
             "",
-            "## The relevance gate on out-of-corpus questions",
+            "## Criterion 3 — the relevance gate on out-of-corpus questions",
             "",
             f"Produced by `run_eval.py::check_out_of_scope`, cutoff {threshold}. "
-            f"Refused {refused} of {len(gate_rows)}.",
+            f"Refused {refused} of {total_oos}.",
             "",
             "Retrieval is deterministic and the gate is a comparison against a",
             "fixed number, so these do not vary between runs — one pass over the",
@@ -239,13 +352,21 @@ def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, sc
         ]
         for row in gate_rows:
             question = row["question"].replace("|", "\\|")
-            verdict = "refused" if row["refused"] else "**let through**"
-            lines.append(f"| {question} | {row['best_distance']:.3f} | {verdict} |")
+            gate_cell = "refused" if row["refused"] else "**let through**"
+            lines.append(f"| {question} | {row['best_distance']:.3f} | {gate_cell} |")
 
-    lines += ["", "---", "", "## Real output", "",
-              "This is what the system actually produced. Paste the relevant parts",
-              "into your README underneath the table — the rubric asks for real",
-              "output as text, not a description of it.", ""]
+    lines += [
+        "",
+        "---",
+        "",
+        "## Real output",
+        "",
+        "This is what the system actually produced, including the full text of",
+        "every retrieved chunk. Paste the relevant parts into your README",
+        "underneath the tables above — the rubric asks for real output as text,",
+        "not a description of it.",
+        "",
+    ]
 
     for entry in transcript:
         lines += [
@@ -253,7 +374,22 @@ def write_report(rows, transcript, gate_rows, args, corpus, top_k, threshold, sc
             "",
             f"- Best distance: {entry['best_distance']:.4f} "
             f"({'passed' if entry['gate_passed'] else 'refused by'} the gate)",
-            f"- Sources retrieved: {', '.join(entry['sources']) or 'none'}",
+            f"- Criterion 1 (retrieval contains answer): {_mark(entry['crit1'])}",
+            f"- Criterion 2 (answer names a source): {_mark(entry['crit2'])}",
+            "",
+            "**Retrieved chunks:**",
+            "",
+        ]
+        for chunk in entry["chunks"]:
+            lines += [
+                f"`{chunk['source']}` — distance {chunk['distance']:.4f}",
+                "```",
+                chunk["text"],
+                "```",
+                "",
+            ]
+        lines += [
+            "**Answer:**",
             "",
             "```",
             entry["answer"],
