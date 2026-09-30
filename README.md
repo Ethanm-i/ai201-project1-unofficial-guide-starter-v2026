@@ -211,18 +211,88 @@ A lower cutoff could reject useful answers; a higher cutoff could admit more unr
      the same number goes in all three run columns. That's correct, not lazy.
 
      Milestone 1. -->
-
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 4/5 | 4/5 | 4/5 | MISSED |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Sampled chunks identify their topic and contain understandable thoughts without cut-off sentences | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Housing-count answer reports the seven buildings represented in the corpus | 1 of 1 | 0/1 | 0/1 | 0/1 | MISSED |
+
+**Criteria 4 and 5 clarification (after the baseline run):** These measurable targets clarify the original descriptions in `criteria.md`; they were not defined before testing. Evidence: `results/run_2026-09-29_1703_before.md`.
+
+**Criterion 4 method:** Manually inspected the first retrieved chunk for each of the five questions in each run: `admin_add_drop_deadline.txt`, `course_cs_210_exams.txt`, `course_math_220_workload.txt`, `dining_the_ridgeway_cafe_followup.txt`, and `housing_aldridge_hall.txt`. All five identify their topic and contain understandable thoughts without sentences cut off by chunking. These same chunks appear in all three runs, so the counts repeat. This assesses chunk readability, not whether the chunk answers the question; the housing description is readable but does not establish a campus-wide count.
+
+**Criterion 5 method:** Checked the answer to "How many houses are on campus?" in each run. All three say there is not enough information rather than giving seven, so each scores 0/1. The refusal avoids inventing a total, but the counting target is still missed.
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+
+Produced by `run_eval.py::check_out_of_scope`, cutoff 0.6. Refused 5 of 5.
+
+Retrieval is deterministic and the gate is a comparison against a
+fixed number, so these do not vary between runs — one pass over the
+list is the whole measurement.
+
+| Out-of-scope question | Best distance | Gate |
+|---|---|---|
+| What is the capital of Mongolia? | 0.825 | refused |
+| How do I change the oil in a diesel engine? | 0.923 | refused |
+| Who won the 1994 World Cup? | 0.886 | refused |
+| What is the recommended dosage of ibuprofen for a headache? | 0.844 | refused |
+| How do I write a for loop in Rust? | 0.891 | refused |
+
+### When can I drop a course, and when does a W appear on my transcript? — run 1
+
+- Best distance: 0.1994 (passed the gate)
+- Criterion 1 (retrieval contains answer): pass
+- Criterion 2 (answer names a source): pass
+
+**Retrieved chunks:**
+
+`admin_add_drop_deadline.txt` — distance 0.1994
+```
+On the add/drop deadline
+
+You can add a course through the end of the second week. Dropping is a longer window — through the end of week six — but a drop after week two shows as a W on your transcript. Nothing anywhere on the registrar's site says this plainly, and students find out from each other.
+```
+
+`admin_withdrawal_deadline.txt` — distance 0.4426
+```
+On the withdrawal deadline
+
+Withdrawal is a different thing from dropping and has a different date. Dropping ends at week six. Withdrawal runs to week ten, requires an adviser signature, and puts a W on the transcript that doesn't affect GPA. The two dates appear on different pages of the registrar's site and this catches people every year.
+```
+
+`admin_transcript_requests.txt` — distance 0.5263
+```
+On the transcript requests
+
+Official transcripts cost $8 and take three business days electronically, or ten by post. Unofficial ones are free and instant from the student portal, and are accepted by most employers and by every graduate programme at the application stage.
+```
+
+`admin_pass_fail_option.txt` — distance 0.5351
+```
+On the pass/fail option
+
+Any course outside your major can be taken pass/fail, and — the part nobody mentions — you can declare it as late as week eight, after you've seen your midterm. A pass needs a C- or better. Two per year, maximum eight across a degree.
+```
+
+`admin_grade_appeals.txt` — distance 0.5930
+```
+On the grade appeals
+
+A grade appeal starts with the instructor and has to be raised within fifteen days of the grade posting. Only after that does it go to the department. Skipping the instructor step gets the appeal returned, which wastes most of the fifteen days.
+```
+
+**Answer:**
+
+```
+You can drop a course through the end of week six. A drop after week two shows as a W on your transcript. 
+
+Source: `admin_add_drop_deadline.txt`
+```
 
 ## Verdicts
 
@@ -237,11 +307,30 @@ A lower cutoff could reject useful answers; a higher cutoff could admit more unr
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunks contain the answer | MET | Four of five questions had answer-bearing chunks in every run, meeting the 4/5 target; the housing-count question lacked the complete evidence. |
+| 2 | Every answer names a source | MISSED | Only four of five answers named a source file in each run, below the 5/5 target; the housing responses omitted filenames. |
+| 3 | Gate stops out-of-corpus questions | MET | The gate refused all five off-topic questions, exceeding the 4/5 target; this single deterministic check is repeated across the three columns. |
+| 4 | Sampled chunks identify their topic and are understandable without cut-off sentences | MET under revised criterion | The first retrieved chunk for each of the five questions passed manual inspection in all three runs, meeting the revised 4/5 target. |
+| 5 | Housing answer reports seven buildings represented in the corpus | MISSED under revised criterion | The housing answer supplied no total in any run, scoring 0/1 each time against the revised 1/1 target. |
+
+Evidence: `results/run_2026-09-29_1703_before.md`. Criteria 4 and 5 use the post-baseline clarifications recorded beneath the original wording in `criteria.md`.
+
+arguement of the opposite side verdict from claude
+
+**1. You said MET (4/5). Argue MISSED:**
+Your own README admits the disqualifying flaw: *"The focused questions were tested during this review and their expected phrases were added afterward, so this is not a held-out evaluation."* You wrote the `expects` strings — "week six," "lecture material," "6 to 8 hours" — **after** seeing what the corpus already said, then built a fuzzy matcher to look for exactly those phrases. That's not measuring retrieval quality, it's measuring whether you can find text you already know exists. A criterion is only evidence if it could plausibly have failed by surprise; this one was constructed backward from the answer key. 4/5 under those conditions isn't a MET, it's a foregone conclusion.
+
+**2. You said MISSED (4/5, needed 5/5). Argue MET:**
+Look at what the "failure" actually is: in all three runs, the housing-count answer is a refusal — *"I don't have enough information to determine how many houses are on campus."* `generate.py`'s own grounding instruction explicitly demands this behavior: *"If the documents don't cover the question, say you don't have enough information. Do not guess."* A refusal is not "an answer without a source" — it's the system correctly declining to fabricate one. If you exclude the one case where citing a source would mean citing a source for a fact it doesn't have, every real, substantive answer the system produced named a source in **all 3 runs, 4 for 4**. Counting a deliberate, correct refusal as a strike against "names a source" punishes exactly the behavior your grounding instruction was designed to reward.
+
+**3. You said MET (5/5, needed 4/5). Argue MISSED:**
+Check the actual distances: 0.825, 0.923, 0.886, 0.844, 0.891 — every out-of-scope question landed nowhere near the 0.6 cutoff. These questions ("capital of Mongolia," "oil change," "1994 World Cup") aren't adjacent to your corpus at all; they're maximally, obviously off-topic. A gate that refuses these tells you almost nothing about whether it can catch the failure mode that actually matters: a plausible-sounding, *almost*-covered question. Notice your housing-count question — a question your corpus genuinely can't answer — scored 0.404, comfortably on the "pass" side of the gate. That's the real stress case, and it's not in your OUT_OF_SCOPE set at all. 5/5 on an easy test tells you the gate works when nothing is close; it tells you nothing about whether it works when something merely resembles being close, which is the only place a relevance gate is actually hard.
+
+**4. You said "MET under revised criterion." Argue MISSED:**
+You already know this corpus has a broken chunk: `course_math_220.txt` contains *"I lived here my sophomore year"* — a sentence that describes living in a building, sitting inside a math course document. It's not cut off, it's actively wrong for its context, which is arguably worse than the truncation the criterion was written to catch. Your revision scoped the sample down to *"the first retrieved chunk for each test question"* — and by coincidence, that broken sentence lives in `course_math_220.txt`, which retrieves at distance 0.5091, dead last of 5 results for the MATH 220 question, never first. The revision rules say a revision is legitimate only when the original criterion **couldn't be measured** — not when re-scoping it conveniently steps around a defect you already know is sitting in the corpus. This reads exactly like the thing the professor's own instructions warn against: *"Lowering a target because you missed it... costs you the point."* You didn't lower a number, but you narrowed the sample in a way that guarantees the one known bad chunk never gets checked.
+
+**5. You said "MISSED under revised criterion." Argue MET:**
+Zero out of five housing documents retrieved even mention a total count — and at `TOP_K = 5`, the system is structurally incapable of ever retrieving all 7 housing chunks (`Calder Annexe` and `Morrow House` never even entered the result set in any of the three runs). This isn't a system failing to notice an answer that was in front of it — the number "7" appears **nowhere in the corpus** as a stated fact; it exists only because you counted files yourself. A criterion that can only be satisfied by the model inferring a fact from evidence that was never given to it isn't testing your retrieval pipeline — it's testing whether the model will guess when it shouldn't. Given that it refused instead of guessing, three times, consistently, that's arguably the system behaving exactly as designed — which makes this a flaw in the criterion's construction, not a MISSED result for the pipeline.
 
 ## Diagnoses
 
