@@ -187,6 +187,9 @@ A lower cutoff could reject useful answers; a higher cutoff could admit more unr
 
 **2. Retrieval:** I used AI to test retrieval and help choose a cutoff. and to review my quesitions to make them more forcused and it replaced the questions with focused ones.I left one of the question to show the gaps in and the limitation of the retrieval
 
+**2. Retrieval:** I used claude to analyse, and explain the errors I got and show me the ways i can solve these errors. I also used it to change up the some code like the methods in the scorer file like the retrivel_hit method. Reviewed the code before confirming it
+
+I also used Claude to explain how rapidfuzz works and how i can use it in my score file.
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
@@ -405,9 +408,13 @@ I do not have enough information to determine the total number of houses on camp
 
      Milestone 5. -->
 
+Question 5 still does not give me the exact total number of buildings it now list all the docs and buildings but does not provide answer. This is beacause there is no document that mentions or talks about the number of houses so the model doesnt have answer. I stopped here because i didnt know how i could fix this. The only option seems to be adding a new document adding this information for the model to be able to retrive it or to choose a different question.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+
+Increasing the top k help to increase the rage in which the model can answer buy didnt solve the problem or give the answer that I was looking for. I think i would change the question to make sure that it can be answered by the provided documents.
