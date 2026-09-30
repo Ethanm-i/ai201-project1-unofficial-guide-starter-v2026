@@ -348,34 +348,52 @@ it looks like the program can only retrive 5 results ann there are 7 housing bui
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** Increased `TOP_K` in `config.py` from 5 to 10. This experiment changed only the number of retrieved chunks; the questions, chunking strategy, relevance cutoff of 0.6, grounding prompt, and scoring rules stayed the same.
 
-**Why I picked it:**
-
-<!-- Connect it to a specific diagnosis above in one sentence. If you can't,
-     you picked a fix because it sounded impressive. -->
+**Why I picked it:** The housing-count question retrieved only five building descriptions in the baseline, so increasing top-k tested whether more complete retrieval would let the model supply the count.
 
 ### Run Log — After
 
-<!-- Same format, same five criteria, three runs each.
-     `python run_eval.py --label after` -->
+Before evidence: [17:03 baseline report](results/run_2026-09-29_1703_before.md).
+After evidence: [22:56 after report](results/run_2026-09-29_2256_after.md), produced by `run_eval.py::main`, with three runs per question and caching off.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 4/5 | 4/5 | 4/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 4/5 | 4/5 | 4/5 | MISSED |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. Sampled chunks identify their topic and contain understandable thoughts without cut-off sentences | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 5. Housing-count answer reports the seven buildings represented in the corpus | 1 of 1 | 0/1 | 0/1 | 0/1 | MISSED |
 
-**Did it help?**
+**Manual scoring check:** The saved report automatically scores criterion 1 as 5/5. That is a false positive: `scorer.py::retrieval_hit` matches the expected string `7` in `transit_walking.txt`, where it refers to minutes, not a housing total. The table above records the manually verified 4/5; the original report is preserved. All seven documented buildings now appear across the housing results, but no single retrieved chunk contains the total, and the descriptions do not establish an exhaustive campus-wide list.
 
-<!-- Say plainly whether it did, and how you know. If it made things worse,
-     say that — a change that backfired, honestly reported, earns full credit
-     and is more interesting than one that worked. What matters is that you can
-     tell.
+For criterion 4, the first retrieved chunk for each question was the same as in the baseline, so the same five-chunk readability check still scores 5/5. All three housing answers refused to provide a count and named no source file, leaving criteria 2 and 5 missed. All five off-topic questions were refused, so criterion 3 repeats the single gate-check result across all three columns.
 
-     Milestone 4. -->
+**Before and after comparison:** Each cell lists runs 1, 2, and 3.
+
+| Criterion | Before: top-k 5 | After: top-k 10, manually checked |
+|---|---|---|
+| 1. Retrieval | 4/5, 4/5, 4/5 | 4/5, 4/5, 4/5 |
+| 2. Source filenames | 4/5, 4/5, 4/5 | 4/5, 4/5, 4/5 |
+| 3. Off-topic refusals | 5/5, 5/5, 5/5 | 5/5, 5/5, 5/5 |
+| 4. Sampled chunk readability | 5/5, 5/5, 5/5 | 5/5, 5/5, 5/5 |
+| 5. Housing count | 0/1, 0/1, 0/1 | 0/1, 0/1, 0/1 |
+
+**Actual after-run evidence:** Housing question, run 3, from `results/run_2026-09-29_2256_after.md`. Retrieval: `store.py::search`; answer: `generate.py::answer_from_chunks`.
+
+Excerpt from retrieved `transit_walking.txt` (distance 0.6040), showing the misleading numeric match:
+
+```text
+Rough numbers, measured rather than guessed. Aldridge Hall to the science quad: 4 minutes. Fenwick Court to central campus: 18 minutes. Morrow House to Kestrel Commons: 7 minutes. Library to Ridgeway Café: 3 minutes.
+```
+
+Full generated answer:
+
+```text
+I do not have enough information to determine the total number of houses on campus, as the provided documents only describe specific residential buildings and do not list all of them.
+```
+
+**Did it help?** Raising top-k retrieved descriptions of all seven documented housing buildings, but it did not improve any manually checked criterion: the housing answer still refused the count and omitted citations in all three runs. The extra results also included study-room booking and walking times, adding irrelevant context. The apparent automatic retrieval gain came from a scoring false positive, not a supported housing total.
 
 ## What's Still Broken
 
