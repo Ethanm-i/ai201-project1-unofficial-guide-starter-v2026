@@ -334,23 +334,17 @@ Zero out of five housing documents retrieved even mention a total count — and 
 
 ## Diagnoses
 
-<!-- For each miss: which stage caused it, and how. The stage alone isn't
-     enough — you need the mechanism.
+Evidence: `results/run_2026-09-29_1703_before.md`.
 
-     Not a diagnosis: "Question 3 didn't work."
-     A diagnosis:     "Question 3 asks about laundry costs. The answer is in
-                       one sentence that got split across two chunks, so
-                       neither chunk on its own contains it."
+**Criterion 2 — Generation:** The housing question passed the gate, but the model returned a refusal without a source filename in all three runs. The prompt requests citations, but the pipeline does not enforce them on generated refusals.
 
-     The five stages: loading → chunking → embedding → retrieval → generation.
+**Criterion 5 — Retrieval:** The housing-count question retrieved descriptions of only five buildings. Calder Annexe and Morrow House were absent, and none of the retrieved chunks stated the total. With incomplete evidence, the model declined to give a count.
 
-     Look for a pattern. If three misses all ask about numbers, that's one
-     problem, not three.
+**Pattern:** Both misses occurred on the housing-count question. Incomplete retrieval prevented the count, and the resulting refusal omitted citations. The refusal avoided guessing, but still missed the recorded targets.
 
-     Missed nothing? Say so, then say honestly whether your targets were set
-     low, and which one you'd tighten and to what.
+**Possible reaseon that are cause question five to fail**
 
-     Milestone 3. -->
+it looks like the program can only retrive 5 results ann there are 7 housing buildings hence 2 building are left out.  And the chunking systm made it more worse since not almost all the house documents are split into two chunks. In addition, in all the documents there is no document that says that there are 7 housing buildings. and this makes it hard for the system to give the correct number.
 
 ## The Improvement
 

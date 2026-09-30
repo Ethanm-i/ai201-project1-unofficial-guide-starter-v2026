@@ -59,7 +59,6 @@ in at least 4 of 5 tries.
 
 One of the chucks contains a sentence that doesnt makes sense or is not expected to be there
 
-<!-- Here is the Unit 2 revision for criterion 4. -->
 
 > **Revised in Unit 2:** At least 4 of 5 sampled chunks must identify their topic and contain understandable thoughts without sentences cut off by chunking. Sample the first retrieved chunk for each test question.
 >
@@ -90,7 +89,6 @@ One of the chucks contains a sentence that doesnt makes sense or is not expected
 for example when i asked how many dining halls are on campus i got back are response 
 saying " I dont have enough information to answer this question" and the lisdt od the dinning halls listed in the different location and didnt get back a number.
 
-<!-- Here is the Unit 2 revision for criterion 5. -->
 
 > **Revised in Unit 2:** For “How many houses are on campus?”, the answer must report the seven housing buildings represented in the corpus in all three runs.
 >
